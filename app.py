@@ -489,11 +489,12 @@ def render_main(backend: dict):
         st.info("Running in limited demo mode. Ensure ChromaDB and dependencies are installed.")
 
     # Tab layout
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "🔍 Query Engine",
         "📄 Document Upload",
         "📈 Analytics Dashboard",
         "🏗️ System Architecture",
+        "🌐 Research Any Company",
     ])
 
     with tab1:
@@ -507,6 +508,8 @@ def render_main(backend: dict):
 
     with tab4:
         render_architecture_tab()
+    with tab5:
+        render_research_tab(backend)
 
 
 # ─── Tab 1: Query Engine ───────────────────────────────────────────────────────
@@ -895,48 +898,48 @@ def render_architecture_tab():
 │  USER QUERY                                                         │
 │     │                                                               │
 │     ▼                                                               │
-│  ┌─────────────────────────────────────────────────────────┐       │
-│  │              LANGGRAPH STATE MACHINE                    │       │
-│  │                                                         │       │
-│  │  1. QUERY ANALYST NODE                                  │       │
-│  │     • Decompose complex query → 3-5 sub-queries         │       │
-│  │     • Classify intent (credit_risk / expansion / ...)   │       │
-│  │                    │                                    │       │
-│  │                    ▼                                    │       │
-│  │  2. DUAL RETRIEVER NODE                                 │       │
-│  │     • ChromaDB Collection A: Language-Centric           │       │
-│  │       (Qualitative, Strategic, Narrative)               │       │
-│  │     • ChromaDB Collection B: Financial/Ownership        │       │
-│  │       (Quantitative, Tables, Ratios, Figures)           │       │
-│  │     • MMR + cosine similarity scoring                   │       │
-│  │                    │                                    │       │
-│  │                    ▼                                    │       │
-│  │  3. CONTEXT GRADER NODE                                 │       │
-│  │     • LLM evaluates sufficiency of retrieved context    │       │
-│  │     • Identifies missing aspects                        │       │
-│  │        │                        │                       │       │
-│  │    SUFFICIENT                NOT SUFFICIENT             │       │
-│  │        │                        │                       │       │
-│  │        │              4. SELF-CORRECTOR NODE            │       │
-│  │        │                 • Generates refined queries    │       │
-│  │        │                 • Re-enters Retriever          │       │
-│  │        │                 • Max 5 iterations             │       │
-│  │        │                        │                       │       │
-│  │        ▼←───────────────────────┘                      │       │
-│  │  5. KNOWLEDGE SYNTHESIZER NODE                          │       │
-│  │     • Structured financial analysis                     │       │
-│  │     • Separates financial figures from narrative        │       │
-│  │     • Generates: executive summary, risk flags,         │       │
-│  │       key metrics, credit assessment, expansion outlook │       │
-│  │                    │                                    │       │
-│  │                    ▼                                    │       │
-│  │  6. FINAL RESPONDER NODE                                │       │
-│  │     • Formats structured Markdown report                │       │
-│  │     • Attaches source citations                         │       │
-│  │     • Confidence level: HIGH / MEDIUM / LOW             │       │
-│  └─────────────────────────────────────────────────────────┘       │
+│  ┌─────────────────────────────────────────────────────────┐        │
+│  │              LANGGRAPH STATE MACHINE                    │        │
+│  │                                                         │        │
+│  │  1. QUERY ANALYST NODE                                  │        │
+│  │     • Decompose complex query → 3-5 sub-queries         │        │
+│  │     • Classify intent (credit_risk / expansion / ...)   │        │
+│  │                    │                                    │        │
+│  │                    ▼                                    │        │
+│  │  2. DUAL RETRIEVER NODE                                 │        │
+│  │     • ChromaDB Collection A: Language-Centric           │        │
+│  │       (Qualitative, Strategic, Narrative)               │        │
+│  │     • ChromaDB Collection B: Financial/Ownership        │        │
+│  │       (Quantitative, Tables, Ratios, Figures)           │        │
+│  │     • MMR + cosine similarity scoring                   │        │
+│  │                    │                                    │        │
+│  │                    ▼                                    │        │
+│  │  3. CONTEXT GRADER NODE                                 │        │
+│  │     • LLM evaluates sufficiency of retrieved context    │        │
+│  │     • Identifies missing aspects                        │        │
+│  │        │                        │                       │        │
+│  │    SUFFICIENT                NOT SUFFICIENT             │        │
+│  │        │                        │                       │        │
+│  │        │              4. SELF-CORRECTOR NODE            │        │
+│  │        │                 • Generates refined queries    │        │
+│  │        │                 • Re-enters Retriever          │        │
+│  │        │                 • Max 5 iterations             │        │
+│  │        │                        │                       │        │
+│  │        ▼←───────────────────────┘                       │        │
+│  │  5. KNOWLEDGE SYNTHESIZER NODE                          │        │
+│  │     • Structured financial analysis                     │        │
+│  │     • Separates financial figures from narrative        │        │
+│  │     • Generates: executive summary, risk flags,         │        │
+│  │       key metrics, credit assessment, expansion outlook │        │
+│  │                    │                                    │        │
+│  │                    ▼                                    │        │
+│  │  6. FINAL RESPONDER NODE                                │        │
+│  │     • Formats structured Markdown report                │        │
+│  │     • Attaches source citations                         │        │
+│  │     • Confidence level: HIGH / MEDIUM / LOW             │        │
+│  └─────────────────────────────────────────────────────────┘        │
 │                                                                     │
-│  OUTPUT: Structured Analysis Report + Risk Flags + Metrics         │
+│  OUTPUT: Structured Analysis Report + Risk Flags + Metrics          │ 
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -973,7 +976,7 @@ IR Page (Tata Motors / HUL / Reliance)
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | Orchestration | LangGraph (StateGraph) | Agentic loop with self-correction |
-| LLM | GPT-4o / GPT-4-turbo | Query analysis, grading, synthesis |
+| LLM | Groq | Query analysis, grading, synthesis |
 | Embeddings | text-embedding-3-small | Semantic vector search |
 | Vector DB | ChromaDB (persistent) | Dual-collection retrieval |
 | PDF Parsing | pdfplumber + PyPDF2 | Text + table extraction |
@@ -1049,6 +1052,187 @@ item is execution on CAPEX programs and commodity cost normalization.
         "iterations": 0,
     }
 
+
+# ─── Tab 5: Research Any Company ──────────────────────────────────────────────
+def render_research_tab(backend: dict):
+    st.markdown('<div class="section-header">🌐 Research Any Company</div>', unsafe_allow_html=True)
+    st.info(
+        "Enter any company name — the system will automatically search the web, "
+        "download their investor relations documents, index them, and answer your query."
+    )
+ 
+    col_input, col_opts = st.columns([2, 1])
+ 
+    with col_input:
+        research_company = st.text_input(
+            "Company Name",
+            placeholder="e.g. Bajaj Finance, Infosys, HDFC Bank, Apple Inc.",
+            help="Enter the full company name as it appears on their IR page.",
+        )
+        research_query = st.text_area(
+            "Your Question",
+            height=100,
+            placeholder=(
+                "e.g. What are the key credit risks and debt profile?\n"
+                "e.g. Summarize revenue growth and EBITDA margins over last 2 years."
+            ),
+        )
+ 
+    with col_opts:
+        st.markdown('<div class="section-header">🎛️ Options</div>', unsafe_allow_html=True)
+        max_pdfs = st.slider("Max PDFs to download", min_value=1, max_value=5, value=3)
+        filing_pref = st.selectbox(
+            "Preferred Filing Type",
+            ["All", "annual_report", "quarterly_briefing", "investor_presentation"],
+        )
+        auto_query = st.toggle("Auto-query after indexing", value=True)
+ 
+    if st.button("🚀 Research & Analyze", type="primary", use_container_width=True):
+        if not research_company.strip():
+            st.warning("Please enter a company name.")
+            return
+        if not research_query.strip() and auto_query:
+            st.warning("Please enter a question.")
+            return
+ 
+        # ── Progress container ─────────────────────────────────────────────────
+        progress_box = st.empty()
+        log_lines = []
+ 
+        def update_progress(msg: str):
+            log_lines.append(msg)
+            progress_box.markdown(
+                "\n\n".join(f"`{line}`" for line in log_lines[-6:])
+            )
+ 
+        # ── Step 1: Scrape & Download ──────────────────────────────────────────
+        st.markdown("---")
+        with st.spinner(f"Searching the web for {research_company} filings..."):
+            try:
+                from ingestion.dynamic_scraper import DynamicIRScraper
+                scraper = DynamicIRScraper(
+                    company_name=research_company.strip(),
+                    max_pdfs=max_pdfs,
+                )
+                manifest = scraper.run(progress_callback=update_progress)
+            except Exception as e:
+                st.error(f"Scraping failed: {e}")
+                return
+ 
+        if not manifest.get("files"):
+            st.error(
+                "No documents could be downloaded automatically. "
+                "Please use the **Document Upload** tab to upload PDFs manually."
+            )
+            return
+ 
+        st.success(f"✅ Downloaded **{len(manifest['files'])}** documents")
+ 
+        # Show what was downloaded
+        with st.expander("📁 Downloaded Files", expanded=True):
+            for f in manifest["files"]:
+                st.markdown(f"- `{f['filename']}` — {f['filing_type']}")
+ 
+        # ── Step 2: Index ──────────────────────────────────────────────────────
+        indexer = backend.get("indexer")
+        if not indexer:
+            st.error("Backend indexer not available.")
+            return
+ 
+        with st.spinner("Indexing documents into ChromaDB..."):
+            try:
+                total_chunks = 0
+                for file_record in manifest["files"]:
+                    result = indexer.index_uploaded_file(
+                        file_path=file_record["path"],
+                        company_name=research_company.strip(),
+                        filing_type=file_record["filing_type"],
+                    )
+                    if result.get("success"):
+                        total_chunks += result.get("chunks_indexed", 0)
+                st.success(f"✅ Indexed **{total_chunks}** chunks")
+                load_backend.clear()
+            except Exception as e:
+                st.error(f"Indexing failed: {e}")
+                return
+ 
+        # ── Step 3: Query ──────────────────────────────────────────────────────
+        if auto_query and research_query.strip():
+            st.markdown("---")
+            st.markdown(f"### 📊 Analysis: {research_company}")
+ 
+            agent = backend.get("agent")
+            if not agent:
+                st.error("Agent not available.")
+                return
+ 
+            with st.spinner("Running analysis..."):
+                try:
+                    import time
+                    start = time.time()
+                    ft_filter = None if filing_pref == "All" else filing_pref
+                    result = agent.query(
+                        question=research_query.strip(),
+                        company=research_company.strip(),
+                        filing_type_filter=ft_filter,
+                    )
+                    elapsed = time.time() - start
+                except Exception as e:
+                    st.error(f"Query failed: {e}")
+                    return
+ 
+            st.caption(f"*Analysis completed in {elapsed:.2f}s*")
+ 
+            # Metrics row
+            m1, m2, m3, m4 = st.columns(4)
+            with m1:
+                st.markdown(f"**Confidence** `{result.get('confidence','medium').upper()}`")
+            with m2:
+                st.markdown(f"**Iterations** `{result.get('iterations', 1)}`")
+            with m3:
+                st.markdown(f"**Sources** `{len(result.get('sources', []))}`")
+            with m4:
+                rf = len(result.get('risk_flags', []))
+                color = "#ff6b6b" if rf > 2 else "#fbbf24" if rf > 0 else "#48c78e"
+                st.markdown(f"**Risk Flags** <span style='color:{color}'>{rf}</span>", unsafe_allow_html=True)
+ 
+            # Response
+            col_resp, col_meta = st.columns([2, 1])
+            with col_resp:
+                with st.container(border=True):
+                    st.markdown(result.get("response", "No response generated."))
+ 
+            with col_meta:
+                metrics = result.get("key_metrics", {})
+                if metrics:
+                    st.markdown("**📈 Key Metrics**")
+                    for k, v in metrics.items():
+                        st.markdown(
+                            f"<div style='display:flex;justify-content:space-between;"
+                            f"padding:6px 0;border-bottom:1px solid #1e3050;font-size:0.82rem;'>"
+                            f"<span style='color:#7b93b8;'>{k}</span>"
+                            f"<span style='color:#e2eaf5;font-family:monospace;'>{v}</span></div>",
+                            unsafe_allow_html=True,
+                        )
+ 
+                risk_flags = result.get("risk_flags", [])
+                if risk_flags:
+                    st.markdown("<br>**⚠️ Risk Flags**", unsafe_allow_html=True)
+                    for flag in risk_flags:
+                        st.markdown(
+                            f'<div style="background:rgba(255,107,107,0.08);border-left:3px solid #ff6b6b;'
+                            f'padding:8px 12px;margin-bottom:6px;font-size:0.82rem;color:#ffb3b3;">'
+                            f'⚠ {flag}</div>',
+                            unsafe_allow_html=True,
+                        )
+ 
+        # ── Allow manual query if auto_query is off ────────────────────────────
+        elif not auto_query:
+            st.info(
+                f"Documents indexed. Go to **Query Engine** tab, "
+                f"select **{research_company}** from the Company override dropdown, "
+                f"and ask your question."
+            )
 
 # ─── App Entry Point ───────────────────────────────────────────────────────────
 def main():
