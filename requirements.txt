@@ -1,0 +1,39 @@
+# ─── Financial Analyst Intelligence Tool — Dependencies ───────────────────────
+# Python >= 3.10 recommended
+
+# ── Web Framework ──────────────────────────────────────────────────────────────
+streamlit>=1.35.0
+
+# ── LLM & Orchestration ────────────────────────────────────────────────────────
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-openai>=0.1.0        # For OpenAI LLM & embeddings
+langgraph>=0.1.0               # Agentic loop / StateGraph
+
+# ── Vector Store ───────────────────────────────────────────────────────────────
+chromadb>=0.5.0
+
+# ── PDF Parsing ────────────────────────────────────────────────────────────────
+pdfplumber>=0.11.0             # Primary: text + table extraction
+PyPDF2>=3.0.0                  # Fallback PDF parser
+reportlab>=4.0.0               # For generating demo/simulation PDFs
+
+# ── Web Scraping ───────────────────────────────────────────────────────────────
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0                    # BeautifulSoup HTML parser
+
+# ── Local Embeddings (fallback when no OpenAI key) ────────────────────────────
+sentence-transformers>=3.0.0
+torch>=2.0.0                   # Required by sentence-transformers
+
+# ── Data & Utilities ───────────────────────────────────────────────────────────
+python-dotenv>=1.0.0           # .env file support
+numpy>=1.26.0
+
+# ── Visualization ──────────────────────────────────────────────────────────────
+plotly>=5.20.0                 # Charts in analytics dashboard
+
+# ── Optional: Enhanced Retrieval ──────────────────────────────────────────────
+# cohere>=5.0.0                # For Cohere reranking
+# rank-bm25>=0.2.2             # BM25 hybrid search

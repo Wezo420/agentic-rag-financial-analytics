@@ -1,0 +1,24 @@
+{
+  "company": "Reliance Industries",
+  "slug": "reliance",
+  "last_updated": "2026-03-14T15:59:07.671220",
+  "files": [
+    {
+      "company": "Reliance Industries",
+      "slug": "reliance",
+      "filing_type": "annual_report",
+      "year": 2023,
+      "filename": "Reliance_Industries_Annual_Report_FY2023.pdf",
+      "path": "D:\\My stuff\\Dun & Bradstreet\\data\\companies\\reliance\\annual_report\\Reliance_Industries_Annual_Report_FY2023.pdf"
+    },
+    {
+      "company": "Reliance Industries",
+      "slug": "reliance",
+      "filing_type": "quarterly_briefing",
+      "year": 2024,
+      "filename": "Reliance_Q4FY24_Press_Release.pdf",
+      "path": "D:\\My stuff\\Dun & Bradstreet\\data\\companies\\reliance\\quarterly_briefing\\Reliance_Q4FY24_Press_Release.pdf"
+    }
+  ],
+  "errors": []
+}

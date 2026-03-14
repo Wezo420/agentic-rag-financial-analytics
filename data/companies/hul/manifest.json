@@ -1,0 +1,24 @@
+{
+  "company": "Hindustan Unilever (HUL)",
+  "slug": "hul",
+  "last_updated": "2026-03-14T15:59:07.663815",
+  "files": [
+    {
+      "company": "Hindustan Unilever (HUL)",
+      "slug": "hul",
+      "filing_type": "annual_report",
+      "year": 2023,
+      "filename": "HUL_Annual_Report_FY2023.pdf",
+      "path": "D:\\My stuff\\Dun & Bradstreet\\data\\companies\\hul\\annual_report\\HUL_Annual_Report_FY2023.pdf"
+    },
+    {
+      "company": "Hindustan Unilever (HUL)",
+      "slug": "hul",
+      "filing_type": "quarterly_briefing",
+      "year": 2024,
+      "filename": "HUL_Q4FY24_Results_Presentation.pdf",
+      "path": "D:\\My stuff\\Dun & Bradstreet\\data\\companies\\hul\\quarterly_briefing\\HUL_Q4FY24_Results_Presentation.pdf"
+    }
+  ],
+  "errors": []
+}

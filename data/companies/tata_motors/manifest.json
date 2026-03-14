@@ -1,0 +1,24 @@
+{
+  "company": "Tata Motors",
+  "slug": "tata_motors",
+  "last_updated": "2026-03-14T15:59:07.653376",
+  "files": [
+    {
+      "company": "Tata Motors",
+      "slug": "tata_motors",
+      "filing_type": "annual_report",
+      "year": 2023,
+      "filename": "Tata_Motors_Annual_Report_FY2023.pdf",
+      "path": "D:\\My stuff\\Dun & Bradstreet\\data\\companies\\tata_motors\\annual_report\\Tata_Motors_Annual_Report_FY2023.pdf"
+    },
+    {
+      "company": "Tata Motors",
+      "slug": "tata_motors",
+      "filing_type": "quarterly_briefing",
+      "year": 2024,
+      "filename": "Tata_Motors_Q4FY24_Earnings_Presentation.pdf",
+      "path": "D:\\My stuff\\Dun & Bradstreet\\data\\companies\\tata_motors\\quarterly_briefing\\Tata_Motors_Q4FY24_Earnings_Presentation.pdf"
+    }
+  ],
+  "errors": []
+}
