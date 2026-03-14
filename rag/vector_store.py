@@ -9,7 +9,8 @@ Design rationale:
   - Supports both OpenAI embeddings and local HuggingFace fallback
   - Metadata filtering (by company, filing_type, year) for scoped retrieval
 """
-
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 import logging
 import hashlib
 from pathlib import Path
@@ -30,29 +31,8 @@ logger = logging.getLogger(__name__)
 
 # ─── Embedding Factory ─────────────────────────────────────────────────────────
 def build_embedding_function():
-    import os
-    from dotenv import load_dotenv
-    load_dotenv(override=True)
-
-    # Gemini (free)
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key:
-        try:
-            from chromadb.utils.embedding_functions import GoogleGenerativeAiEmbeddingFunction
-            logger.info("Using Gemini embeddings: embedding-001")
-            return GoogleGenerativeAiEmbeddingFunction(api_key=gemini_key)
-        except Exception as e:
-            logger.warning(f"Gemini embedding failed: {e}")
-
-    # Local fallback
-    try:
-        from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-        logger.info(f"Using local HuggingFace embeddings: {LOCAL_EMBEDDING_MODEL}")
-        return SentenceTransformerEmbeddingFunction(model_name=LOCAL_EMBEDDING_MODEL)
-    except Exception as e:
-        logger.warning(f"SentenceTransformer failed: {e}")
-
-    logger.info("Using ChromaDB default embeddings.")
+    """Use ChromaDB default embeddings — consistent, free, no conflicts."""
+    logger.info("Using ChromaDB default embeddings (all-MiniLM-L6-v2 built-in).")
     return None
 
 

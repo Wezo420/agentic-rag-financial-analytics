@@ -210,28 +210,39 @@ Respond ONLY in JSON:
     "missing_aspects": ["list of what's missing if not sufficient"]
 }}"""
 
-SYNTHESIZER_PROMPT = """You are a Senior Credit Analyst and Financial Analyst. Using the retrieved context below, provide a comprehensive, structured analysis.
-
-CRITICAL: Respond with ONLY valid JSON. No real newlines inside string values. Use \\n\\n for paragraph breaks within strings. No trailing commas.
+SYNTHESIZER_PROMPT = """You are a Senior Credit Analyst. Using the retrieved context below, write a financial analysis report in clean markdown format.
 
 Company: {company}
-Original Query: {query}
-Query Intent: {intent}
+Query: {query}
+Intent: {intent}
 
 Retrieved Context:
 {context}
 
-Provide analysis in this EXACT JSON structure:
-{{
-    "executive_summary": "2-3 sentence overview",
-    "analysis": "Detailed analysis addressing the query. Use \\n\\n for paragraph breaks.",
-    "risk_flags": ["Risk 1", "Risk 2"],
-    "key_metrics": {{"Metric Name": "Value"}},
-    "expansion_outlook": "if relevant, else null",
-    "credit_assessment": "Strong/Moderate/Cautious/Weak with rationale",
-    "confidence": "high/medium/low",
-    "data_gaps": ["gaps if any"]
-}}"""
+Write your response in this exact markdown format:
+
+### Executive Summary
+[2-3 sentence overview]
+
+### Detailed Analysis
+[3-4 paragraphs of analysis]
+
+### Credit Assessment
+[Strong/Moderate/Cautious/Weak with rationale]
+
+### Expansion Outlook
+[if relevant, else write: Not explicitly stated in available data]
+
+### Key Metrics
+- **Metric 1:** Value
+- **Metric 2:** Value
+
+### Risk Flags
+- Risk 1
+- Risk 2
+
+### Data Gaps
+- Gap 1"""
 
 SELF_CORRECTOR_PROMPT = """The previous retrieval was INSUFFICIENT for the query: {query}
 Missing aspects: {missing_aspects}
@@ -476,55 +487,18 @@ class FinancialRAGAgent:
             response = self.llm.invoke(prompt)
 
         raw = response.content if hasattr(response, "content") else str(response)
+        # No JSON parsing needed — LLM returns markdown directly
+        formatted = raw.strip()
+        risk_flags = []
+        key_metrics = {}
+        confidence = "medium"
 
-        # Try to parse JSON and format as markdown
-        import json
-        try:
-            # Strip markdown code fences if present
-            clean = raw.strip()
-            if clean.startswith("```"):
-                clean = "\n".join(clean.split("\n")[1:])
-            if clean.endswith("```"):
-                clean = "\n".join(clean.split("\n")[:-1])
-            parsed = json.loads(clean)
+        # Extract risk flags from markdown for the sidebar display
+        import re
+        flags_match = re.findall(r'[-*]\s+(.+)', formatted)
+        if flags_match:
+            risk_flags = flags_match[:6]
 
-            parts = []
-            if parsed.get("executive_summary"):
-                parts.append(f"### Executive Summary\n{parsed['executive_summary']}\n")
-            if parsed.get("analysis"):
-                parts.append(f"### Detailed Analysis\n{parsed['analysis']}\n")
-            if parsed.get("credit_assessment"):
-                parts.append(f"### 🏦 Credit Assessment\n{parsed['credit_assessment']}\n")
-            if parsed.get("expansion_outlook") and parsed["expansion_outlook"] != "null":
-                parts.append(f"### 🏗️ Expansion Outlook\n{parsed['expansion_outlook']}\n")
-            if parsed.get("risk_flags"):
-                parts.append("### ⚠️ Risk Flags")
-                for f in parsed["risk_flags"]:
-                    parts.append(f"- {f}")
-                parts.append("")
-            if parsed.get("key_metrics"):
-                parts.append("### 📈 Key Metrics")
-                for k, v in parsed["key_metrics"].items():
-                    parts.append(f"- **{k}:** {v}")
-                parts.append("")
-            if parsed.get("data_gaps"):
-                parts.append("### 🔍 Data Gaps")
-                for g in parsed["data_gaps"]:
-                    parts.append(f"- _{g}_")
-
-            formatted = "\n".join(parts)
-            risk_flags = parsed.get("risk_flags", [])
-            key_metrics = parsed.get("key_metrics", {})
-            confidence = parsed.get("confidence", "medium")
-
-        except Exception:
-            # LLM returned plain text — use as-is
-            formatted = raw
-            risk_flags = []
-            key_metrics = {}
-            confidence = "medium"
-
-        # Build source citations
         sources = []
         for c in context[:6]:
             m = c.get("metadata", {})
@@ -542,7 +516,7 @@ class FinancialRAGAgent:
         return {
             "synthesized_answer": formatted,
             "source_citations": sources,
-            "confidence_level": confidence if isinstance(confidence, str) else "medium",
+            "confidence_level": "medium",
             "risk_flags": risk_flags,
             "key_metrics": key_metrics,
         }

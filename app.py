@@ -373,7 +373,9 @@ def render_sidebar(backend: dict):
         st.markdown("---")
         st.markdown('<div class="section-header">🏢 Company Selection</div>', unsafe_allow_html=True)
 
-        company_options = list(COMPANY_REGISTRY.keys()) + ["Upload Custom Document"]
+        indexed = backend.get("indexed_companies", [])
+        extra = [c for c in indexed if c not in COMPANY_REGISTRY and c != "Custom"]
+        company_options = list(COMPANY_REGISTRY.keys()) + extra + ["Upload Custom Document"]
         selected = st.selectbox(
             "Select Company",
             company_options,
@@ -449,6 +451,7 @@ def _run_ingestion(company: str, backend: dict):
                     )
                     # Bust cache
                     load_backend.clear()
+                    st.rerun()
         except Exception as e:
             st.sidebar.error(f"Ingestion failed: {e}")
 
@@ -466,6 +469,7 @@ def _run_ingestion_all(backend: dict):
                     total = sum(r.get("chunks_indexed", 0) for r in results)
                     st.sidebar.success(f"Indexed {total} total chunks across {len(results)} companies")
                     load_backend.clear()
+                    st.rerun()
         except Exception as e:
             st.sidebar.error(f"Batch ingestion failed: {e}")
 
@@ -535,9 +539,13 @@ def render_query_tab(backend: dict):
             ["All", "annual_report", "quarterly_briefing", "investor_presentation"],
             help="Filter retrieval to a specific filing type.",
         )
+        indexed = backend.get("indexed_companies", [])
+        all_companies = list(dict.fromkeys(
+            ["Use Sidebar Selection"] + list(COMPANY_REGISTRY.keys()) + indexed
+        ))
         company_for_query = st.selectbox(
             "Company (override)",
-            ["Use Sidebar Selection"] + list(COMPANY_REGISTRY.keys()),
+            all_companies,
         )
         show_sources = st.toggle("Show Source Citations", value=True)
         show_pipeline = st.toggle("Show Agent Pipeline", value=True)
@@ -630,51 +638,6 @@ def render_query_tab(backend: dict):
         with col_resp:
             st.markdown('<div class="section-header">📋 Analysis Report</div>', unsafe_allow_html=True)
             response_text = result.get("response", "No response generated.")
-
-            # Safety net: if JSON leaked through, parse and format it
-            import json, re
-            clean = response_text.strip()
-            # Find JSON block even if surrounded by other text
-            json_match = re.search(r'\{[\s\S]*\}', clean)
-            if json_match:
-                try:
-                    # Fix unescaped newlines inside JSON strings
-                    raw_json = json_match.group()
-                    # Remove actual newlines inside string values
-                    fixed = re.sub(r'(?<=\w)\n(?=\s+"|\s+\w)', ' ', raw_json)
-                    parsed = json.loads(fixed)
-                    parts = ["## 📊 Financial Intelligence Report"]
-                    if parsed.get("executive_summary"):
-                        parts.append(f"### Executive Summary\n{parsed['executive_summary']}\n")
-                    if parsed.get("analysis"):
-                        # Restore paragraph breaks
-                        analysis_text = parsed['analysis'].replace('\\n\\n', '\n\n').replace('\\n', '\n')
-                        parts.append(f"### Detailed Analysis\n{analysis_text}\n")
-                    if parsed.get("credit_assessment"):
-                        parts.append(f"### 🏦 Credit Assessment\n{parsed['credit_assessment']}\n")
-                    if parsed.get("expansion_outlook") and parsed["expansion_outlook"] not in [None, "null"]:
-                        parts.append(f"### 🏗️ Expansion Outlook\n{parsed['expansion_outlook']}\n")
-                    if parsed.get("risk_flags"):
-                        parts.append("### ⚠️ Risk Flags")
-                        for f in parsed["risk_flags"]:
-                            parts.append(f"- {f}")
-                        parts.append("")
-                    if parsed.get("key_metrics"):
-                        parts.append("### 📈 Key Metrics")
-                        for k, v in parsed["key_metrics"].items():
-                            parts.append(f"- **{k}:** {v}")
-                        parts.append("")
-                    if parsed.get("data_gaps"):
-                        parts.append("### 🔍 Data Gaps")
-                        for g in parsed["data_gaps"]:
-                            parts.append(f"- _{g}_")
-                    response_text = "\n".join(parts)
-                except Exception:
-                    # Nuclear fallback: strip JSON entirely and extract text values
-                    texts = re.findall(r'"(?:executive_summary|analysis|credit_assessment|expansion_outlook)"\s*:\s*"([^"]*)"', clean)
-                    if texts:
-                        response_text = "\n\n".join(texts)
-
             with st.container(border=True):
                 st.markdown(response_text)
 
