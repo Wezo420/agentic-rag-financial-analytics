@@ -76,6 +76,14 @@ def _build_llm(temperature: float = 0.1):
     from dotenv import load_dotenv
     load_dotenv(override=True)
 
+    # Read Streamlit Cloud secrets if available
+    try:
+        import streamlit as st
+        for k, v in st.secrets.items():
+            os.environ.setdefault(k, v)
+    except Exception:
+        pass
+
     # Groq (free, very fast)
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if groq_key:
