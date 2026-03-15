@@ -288,4 +288,4 @@ The synthesizer prompt instructs the LLM to respond in structured markdown direc
 
 ---
 
-*Built as a sophisticated internship project for global risk analytics — Dun & Bradstreet.*
+*Built as a sophisticated task/project for risk analytics — Dun & Bradstreet.*
