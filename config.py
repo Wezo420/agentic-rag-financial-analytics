@@ -5,8 +5,8 @@ Manage all environment variables, paths, and LLM settings here.
 import os
 try:
     import streamlit as st
-    for k, v in st.secrets.items():
-        os.environ.setdefault(k, v)
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 except Exception:
     pass  # Local dev — use .env instead
 
