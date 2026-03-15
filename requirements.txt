@@ -9,6 +9,7 @@ langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-openai>=0.1.0        # For OpenAI LLM & embeddings
 langgraph>=0.1.0               # Agentic loop / StateGraph
+langchain-groq>=0.1.0
 
 # ── Vector Store ───────────────────────────────────────────────────────────────
 chromadb>=0.5.0
