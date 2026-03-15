@@ -361,16 +361,6 @@ def render_sidebar(backend: dict):
     with st.sidebar:
         st.markdown('<div class="section-header">⚙️ Configuration</div>', unsafe_allow_html=True)
 
-        # API Key input
-        api_key_display = "✅ Configured" if OPENAI_API_KEY else "⚠️ Not set (demo mode)"
-        st.caption(f"OpenAI API: {api_key_display}")
-        if not OPENAI_API_KEY:
-            key_input = st.text_input("Enter OpenAI API Key", type="password", placeholder="sk-...")
-            if key_input:
-                os.environ["OPENAI_API_KEY"] = key_input
-                st.success("API key set for this session.")
-
-        st.markdown("---")
         st.markdown('<div class="section-header">🏢 Company Selection</div>', unsafe_allow_html=True)
 
         indexed = backend.get("indexed_companies", [])
@@ -566,9 +556,11 @@ def render_query_tab(backend: dict):
         with cols[i]:
             if st.button(sq[:45] + "...", key=f"sample_{i}", use_container_width=True):
                 st.session_state["prefill_query"] = sq
+                st.rerun()
 
     if "prefill_query" in st.session_state:
-        query = st.session_state.pop("prefill_query")
+        query = st.session_state["prefill_query"]
+        del st.session_state["prefill_query"]
 
     # Run Query
     if st.button("🚀 Run Analysis", type="primary", use_container_width=True):
