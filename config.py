@@ -2,6 +2,14 @@
 config.py — Central Configuration for Financial Analyst Intelligence Tool
 Manage all environment variables, paths, and LLM settings here.
 """
+import os
+try:
+    import streamlit as st
+    for k, v in st.secrets.items():
+        os.environ.setdefault(k, v)
+except Exception:
+    pass  # Local dev — use .env instead
+
 from dotenv import load_dotenv
 load_dotenv()
 
