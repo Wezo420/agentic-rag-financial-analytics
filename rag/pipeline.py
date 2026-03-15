@@ -79,8 +79,8 @@ def _build_llm(temperature: float = 0.1):
     # Read Streamlit Cloud secrets if available
     try:
         import streamlit as st
-        for k, v in st.secrets.items():
-            os.environ.setdefault(k, v)
+        if "GROQ_API_KEY" in st.secrets:
+            os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
     except Exception:
         pass
 
