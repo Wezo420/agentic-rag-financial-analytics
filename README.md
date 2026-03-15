@@ -1,6 +1,9 @@
 # 📊 Financial Analyst Intelligence Tool
 
-> An **Agentic RAG** system for Chartered Accountants and Credit Analysts — powered by **LangGraph**, **ChromaDB**, and **Streamlit**.
+> An **Agentic RAG** system for Chartered Accountants and Credit Analysts — powered by **LangGraph**, **Groq (LLaMA 3.3 70B)**, **ChromaDB**, and **Streamlit**.
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit)](https://agenticragfinance.streamlit.app)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/Wezo420/agentic-rag-financial-analytics)
 
 ---
 
@@ -12,80 +15,132 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  INGESTION LAYER                                                            │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  IRScraper (ingestion/scraper.py)                                   │   │
-│  │  • BeautifulSoup IR page parser → PDF link discovery                │   │
-│  │  • Rate-limited downloader with retry logic                         │   │
-│  │  • Filing classifier: annual_report / quarterly / concall           │   │
-│  │  • Simulation mode with rich placeholder PDFs (via reportlab)       │   │
-│  └─────────────────────┬───────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  IRScraper (ingestion/scraper.py)                                   │    │
+│  │  • BeautifulSoup IR page parser → PDF link discovery                │    │
+│  │  • Rate-limited downloader with retry logic                         │    │
+│  │  • Filing classifier: annual_report / quarterly / concall           │    │
+│  │  • Simulation mode with rich placeholder PDFs (via reportlab)       │    │
+│  │                                                                     │    │
+│  │  DynamicIRScraper (ingestion/dynamic_scraper.py)                    │    │
+│  │  • BSE India API → scrip code lookup → annual reports               │    │
+│  │  • NSE India API → symbol lookup → annual reports                   │    │
+│  │  • DuckDuckGo PDF search → direct PDF discovery                     │    │
+│  │  • IR page scraping → BeautifulSoup PDF link extraction             │    │
+│  └─────────────────────┬───────────────────────────────────────────────┘    │
 │                        │                                                    │
-│  ┌─────────────────────▼───────────────────────────────────────────────┐   │
-│  │  DocumentProcessor (ingestion/document_processor.py)                │   │
-│  │  • pdfplumber: text + table extraction per page                     │   │
-│  │  • Context Classifier (regex scoring):                              │   │
-│  │    ├── LANGUAGE_CENTRIC (qualitative, strategy, outlook)            │   │
-│  │    └── FINANCIAL_OWNERSHIP (tables, ratios, figures)                │   │
-│  │  • Adaptive chunking: 1000t (text) / 600t (financial)              │   │
-│  │  • ParsedChunk with full metadata (company, year, page, type)       │   │
-│  └─────────────────────┬───────────────────────────────────────────────┘   │
+│  ┌─────────────────────▼───────────────────────────────────────────────┐    │
+│  │  DocumentProcessor (ingestion/document_processor.py)                │    │
+│  │  • pdfplumber: text + table extraction per page                     │    │
+│  │  • Context Classifier (regex scoring):                              │    │
+│  │    ├── LANGUAGE_CENTRIC (qualitative, strategy, outlook)            │    │
+│  │    └── FINANCIAL_OWNERSHIP (tables, ratios, figures)                │    │
+│  │  • Adaptive chunking: 1000t (text) / 600t (financial)               │    │
+│  │  • ParsedChunk with full metadata (company, year, page, type)       │    │
+│  └─────────────────────┬───────────────────────────────────────────────┘    │
 │                        │                                                    │
 │  STORAGE LAYER         │                                                    │
-│  ┌─────────────────────▼───────────────────────────────────────────────┐   │
-│  │  VectorStoreManager (rag/vector_store.py) — ChromaDB                │   │
-│  │  ┌──────────────────────┐  ┌──────────────────────────────────────┐ │   │
-│  │  │ language_centric     │  │ financial_ownership                  │ │   │
-│  │  │ collection           │  │ collection                           │ │   │
-│  │  │ (narrative text)     │  │ (tables, numbers, ratios)            │ │   │
-│  │  └──────────────────────┘  └──────────────────────────────────────┘ │   │
-│  │  • OpenAI text-embedding-3-small / HuggingFace fallback             │   │
-│  │  • Cosine similarity + metadata filtering                           │   │
-│  └─────────────────────┬───────────────────────────────────────────────┘   │
+│  ┌─────────────────────▼───────────────────────────────────────────────┐    │
+│  │  VectorStoreManager (rag/vector_store.py) — ChromaDB                │    │
+│  │  ┌──────────────────────┐  ┌──────────────────────────────────────┐ │    │
+│  │  │ language_centric     │  │ financial_ownership                  │ │    │
+│  │  │ collection           │  │ collection                           │ │    │
+│  │  │ (narrative text)     │  │ (tables, numbers, ratios)            │ │    │
+│  │  └──────────────────────┘  └──────────────────────────────────────┘ │    │
+│  │  • ChromaDB built-in all-MiniLM-L6-v2 embeddings                    │    │
+│  │  • Cosine similarity + metadata filtering                           │    │
+│  └─────────────────────┬───────────────────────────────────────────────┘    │
 │                        │                                                    │
 │  AGENT LAYER           │                                                    │
-│  ┌─────────────────────▼───────────────────────────────────────────────┐   │
-│  │  FinancialRAGAgent — LangGraph StateGraph (rag/pipeline.py)         │   │
-│  │                                                                     │   │
-│  │  query_analyst ──► dual_retriever ──► context_grader               │   │
-│  │                         ▲                    │                     │   │
-│  │                         │              SUFFICIENT?                 │   │
-│  │                    self_corrector          │    │                  │   │
-│  │                         ▲                 NO   YES                │   │
-│  │                         └─────────────────┘    │                  │   │
-│  │                                                 ▼                  │   │
-│  │                              knowledge_synthesizer                 │   │
-│  │                                       │                            │   │
-│  │                                       ▼                            │   │
-│  │                                final_responder                     │   │
-│  └─────────────────────┬───────────────────────────────────────────────┘   │
+│  ┌─────────────────────▼───────────────────────────────────────────────┐    │
+│  │  FinancialRAGAgent — LangGraph StateGraph (rag/pipeline.py)         │    │
+│  │                                                                     │    │
+│  │  query_analyst ──► dual_retriever ──► context_grader                │    │
+│  │                         ▲                    │                      │    │
+│  │                         │              SUFFICIENT?                  │    │
+│  │                    self_corrector          │    │                   │    │
+│  │                         ▲                 NO   YES                  │    │
+│  │                         └─────────────────┘    │                    │    │
+│  │                                                 ▼                   │    │
+│  │                              knowledge_synthesizer                  │    │
+│  │                                       │                             │    │
+│  │                                       ▼                             │    │
+│  │                                final_responder                      │    │
+│  └─────────────────────┬───────────────────────────────────────────────┘    │
 │                        │                                                    │
 │  PRESENTATION LAYER    │                                                    │
-│  ┌─────────────────────▼───────────────────────────────────────────────┐   │
-│  │  Streamlit Dashboard (app.py)                                       │   │
-│  │  • Tab 1: Agentic Q&A with risk flags + citations + key metrics     │   │
-│  │  • Tab 2: Document upload + filing browser                          │   │
-│  │  • Tab 3: Analytics (chunk distribution, filing counts)             │   │
-│  │  • Tab 4: Architecture reference                                    │   │
-│  │  • Sidebar: Company selector, ingestion controls, index stats       │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────▼───────────────────────────────────────────────┐    │
+│  │  Streamlit Dashboard (app.py) — 5 Tabs                              │    │
+│  │  • Tab 1: Agentic Q&A — risk flags, citations, key metrics          │    │
+│  │  • Tab 2: Document Upload — PDF upload + auto-indexing              │    │
+│  │  • Tab 3: Analytics Dashboard — chunk stats, filing counts          │    │
+│  │  • Tab 4: System Architecture — LangGraph flow diagram              │    │
+│  │  • Tab 5: Research Any Company — dynamic web scraper + auto-query   │    │
+│  │  • Sidebar: Company selector, ingestion controls, index stats       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## ✨ Features
+
+### 1. 🤖 Agentic RAG Engine (LangGraph)
+A 6-node `StateGraph` that reasons across documents and self-corrects:
+
+| Node | Role |
+|------|------|
+| `query_analyst` | Decomposes complex query into 3-5 sub-queries, classifies intent |
+| `dual_retriever` | Fetches from both ChromaDB collections in parallel |
+| `context_grader` | LLM evaluates if retrieved context is sufficient |
+| `self_corrector` | Generates refined queries if insufficient (up to 5 iterations) |
+| `knowledge_synthesizer` | Produces structured markdown financial analysis |
+| `final_responder` | Formats final report with risk flags, metrics, credit assessment |
+
+### 2. 📄 Context-Aware PDF Parsing
+- **pdfplumber** for text + table extraction
+- Regex-based classifier separates content into two types:
+  - `LANGUAGE_CENTRIC` — qualitative narratives, strategy, MD&A
+  - `FINANCIAL_OWNERSHIP` — quantitative tables, ratios, figures
+- Adaptive chunking: **600 tokens** for financial tables, **1000 tokens** for narrative
+
+### 3. 🗄️ Dual-Collection Vector Store
+Two separate ChromaDB collections prevent narrative text from polluting quantitative queries — improving precision on financial figure retrieval.
+
+### 4. 🌐 Research Any Company (Local Mode)
+A dynamic scraper that:
+1. Searches BSE India API for scrip code → fetches annual reports directly
+2. Falls back to NSE India API
+3. Falls back to DuckDuckGo PDF search
+4. Falls back to direct IR page scraping
+5. Auto-indexes downloaded PDFs and runs your query — all in one click
+
+> **Note:** This feature works fully when running `app.py` locally. Streamlit Cloud restricts outbound network requests, so it is unavailable on the hosted demo.
+
+### 5. 📊 Streamlit Dashboard
+- Dark financial terminal aesthetic
+- 5-tab layout with sidebar company selector
+- Real-time ingestion progress
+- Source citations with relevance scores
+- Query history tracking
 
 ---
 
 ## 📁 Project Structure
 
 ```
-financial_analyst_tool/
+agentic-rag-financial-analytics/
 ├── app.py                          # Streamlit dashboard (entry point)
 ├── config.py                       # Centralized configuration
 ├── setup_and_run.py                # One-click setup CLI
 ├── requirements.txt
+├── render.yaml                     # Render deployment config
 ├── .env.example                    # Environment variable template
 │
 ├── ingestion/
 │   ├── __init__.py
-│   ├── scraper.py                  # IRScraper — web scraping + PDF download
+│   ├── scraper.py                  # IRScraper — simulated IR downloads
+│   ├── dynamic_scraper.py          # DynamicIRScraper — live web scraping
 │   └── document_processor.py      # Multi-modal PDF parser + classifier
 │
 ├── rag/
@@ -107,22 +162,34 @@ financial_analyst_tool/
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local)
 
-### 1. Install Dependencies
+### 1. Clone the repository
 ```bash
-cd financial_analyst_tool
+git clone https://github.com/Wezo420/agentic-rag-financial-analytics.git
+cd agentic-rag-financial-analytics
+```
+
+### 2. Create virtual environment
+```bash
+python -m venv venv
+venv\Scripts\Activate    # Windows
+# source venv/bin/activate  # Mac/Linux
+```
+
+### 3. Install dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure API Key (Optional)
-```bash
-cp .env.example .env
-# Edit .env and add your OpenAI API key
-# Without key: runs in demo mode with mock LLM + local embeddings
+### 4. Configure API Key
+Create a `.env` file in the project root:
 ```
+GROQ_API_KEY=your-groq-api-key-here
+```
+Get a free Groq key at [console.groq.com](https://console.groq.com) — 14,400 free requests/day.
 
-### 3. One-Click Setup
+### 5. Run setup
 ```bash
 python setup_and_run.py
 ```
@@ -131,7 +198,7 @@ This will:
 - Parse and index all documents into ChromaDB
 - Run a test query to verify the pipeline
 
-### 4. Launch the Dashboard
+### 6. Launch the dashboard
 ```bash
 streamlit run app.py
 ```
@@ -139,26 +206,20 @@ Open: **http://localhost:8501**
 
 ---
 
-## 🔑 Key Design Decisions
+## 🌐 Deployment
 
-### Dual-Collection RAG
-Most RAG systems use a single vector store. This system uses **two separate ChromaDB collections**:
-- `language_centric` — qualitative text (strategy, risk factors, MD&A)
-- `financial_ownership` — quantitative data (financial tables, ratios, ownership patterns)
+### Streamlit Cloud
+[![Deploy to Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://agenticragfinance.streamlit.app)
 
-This improves retrieval precision for financial queries (avoid mixing narrative with numbers).
+Add this to Streamlit Cloud secrets:
+```toml
+GROQ_API_KEY = "your-groq-key-here"
+```
 
-### LangGraph Self-Correction
-Instead of a single retrieval pass, the LangGraph agent:
-1. **Plans** by decomposing the query into sub-queries
-2. **Retrieves** from both collections
-3. **Grades** the context quality
-4. **Self-corrects** with refined queries if context is insufficient (up to 5 iterations)
-5. **Synthesizes** a structured financial analysis
+### Render
+The `render.yaml` file is included for one-click Render deployment. Add `GROQ_API_KEY` as an environment variable in the Render dashboard.
 
-### Context-Aware Chunking
-- Financial tables: 600 token chunks (smaller = more precise, less noise around figures)
-- Narrative text: 1000 token chunks (larger = more coherent context for qualitative analysis)
+> **Note on Research Any Company:** Web scraping (BSE/NSE APIs + DuckDuckGo) is fully functional when running locally. Cloud platforms may restrict outbound requests — use the Document Upload tab as an alternative on hosted versions.
 
 ---
 
@@ -175,7 +236,7 @@ Instead of a single retrieval pass, the LangGraph agent:
 
 ---
 
-## 🏢 Supported Companies (Out-of-Box)
+## 🏢 Pre-Indexed Companies
 
 | Company | Ticker | Sector | Exchange |
 |---------|--------|--------|----------|
@@ -183,7 +244,7 @@ Instead of a single retrieval pass, the LangGraph agent:
 | Hindustan Unilever (HUL) | HINDUNILVR.NS | FMCG | NSE |
 | Reliance Industries | RELIANCE.NS | Conglomerate | NSE |
 
-> Adding new companies: Add entry to `COMPANY_REGISTRY` in `config.py` and provide an IR URL.
+> Upload any PDF via the **Document Upload** tab or use **Research Any Company** (local mode) to add any company dynamically.
 
 ---
 
@@ -192,24 +253,39 @@ Instead of a single retrieval pass, the LangGraph agent:
 | Component | Technology |
 |-----------|------------|
 | Agentic Orchestration | LangGraph (StateGraph) |
-| LLM | GPT-4o (OpenAI) |
-| Embeddings | text-embedding-3-small / sentence-transformers |
+| LLM | Groq — LLaMA 3.3 70B Versatile |
+| Embeddings | ChromaDB built-in (all-MiniLM-L6-v2) |
 | Vector Store | ChromaDB (persistent, cosine similarity) |
 | PDF Parsing | pdfplumber + PyPDF2 |
-| Web Scraping | requests + BeautifulSoup4 |
+| Web Scraping | requests + BeautifulSoup4 + DuckDuckGo Search |
+| IR Data APIs | BSE India API + NSE India API |
 | UI | Streamlit |
 | PDF Generation | reportlab |
+| Language | Python 3.10+ |
 
 ---
 
-## 📈 Extending the System
+## 🔑 Key Design Decisions
 
-- **Add reranking**: Integrate Cohere Rerank or `FlashRank` before synthesis
-- **Add BM25**: Hybrid sparse+dense retrieval for better keyword matching on financial figures
-- **Multi-company queries**: Extend the state to handle cross-company analysis
-- **Real-time data**: Connect to NSE/BSE API for live price and announcement feeds
-- **Export**: Add PDF report generation from the analysis output
+### Dual-Collection RAG
+Most RAG systems use a single vector store. This system uses two separate ChromaDB collections — `language_centric` and `financial_ownership` — ensuring narrative text never pollutes quantitative queries and vice versa.
+
+### LangGraph Self-Correction Loop
+Instead of a single retrieval pass, the agent decomposes queries, grades context quality, and self-corrects with refined queries for up to 5 iterations before synthesizing the final answer.
+
+### Markdown-First LLM Output
+The synthesizer prompt instructs the LLM to respond in structured markdown directly — avoiding JSON parsing fragility and ensuring clean, readable output every time.
 
 ---
 
-*Built as a sophisticated internship project for global risk analytics firms.*
+## 📈 Potential Extensions
+
+- **Hybrid BM25 + Dense Retrieval** for better keyword matching on financial figures
+- **Cohere Rerank** integration before synthesis for higher precision
+- **Multi-company cross-analysis** — compare two companies in one query
+- **Live NSE/BSE price feed** integration for real-time data
+- **PDF report export** — download the analysis as a formatted PDF
+
+---
+
+*Built as a sophisticated internship project for global risk analytics — Dun & Bradstreet.*
