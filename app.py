@@ -327,7 +327,6 @@ def init_session_state():
             st.session_state[k] = v
 
 
-# ─── Lazy-Load Backend ─────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_backend():
     """Load vector store + agent once and cache across sessions."""
@@ -335,7 +334,18 @@ def load_backend():
         from rag.vector_store import VectorStoreManager
         from rag.pipeline import FinancialRAGAgent
         from rag.indexer import DocumentIndexer
+
         vs = VectorStoreManager()
+        stats = vs.get_stats()
+
+        # Auto-ingest if ChromaDB is empty (e.g. first run on Streamlit Cloud)
+        if stats.get("total", 0) == 0:
+            from ingestion.scraper import ingest_all_companies
+            ingest_all_companies(use_simulation=True)
+            indexer = DocumentIndexer()
+            indexer.index_all_companies()
+            vs = VectorStoreManager()  # Refresh after indexing
+
         agent = FinancialRAGAgent(vs)
         indexer = DocumentIndexer()
         stats = vs.get_stats()
